@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8"/>
+<title>Student Manager Application</title>
+</head>
+<body>
+<div align="center">
+	<h1><a href="/">Student Management System</a></h1>
+    <div class="form-inline">
+    <a href="/students" class="btn btn-primary">Students</a>
+    <a href="/courses" class="btn btn-primary">Courses</a>
+    <a href="" class="btn btn-primary">Instructors</a>
+    <a href="" class="btn btn-primary">Departments</a>
+    <a href="" class="btn btn-primary">Faculties</a>
+    </div>
+    <br/><br/>
+    <table border="1" cellpadding="10">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Department code</th>
+                <th>Faculty code</th>
+                <th>Location code</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="student : ${students}">
+                <td th:text="${student.stu_id}">ID</td>
+                <td th:text="${student.stu_fname}">First Name</td>
+                <td th:text="${student.stu_lname}">Last Name</td>
+                <td th:text="${student.dep_code}">Department Code</td>
+                <td th:text="${student.fac_code}">Faculty Code</td>
+                <td th:text="${student.loc_code}">Location Code</td>
+                <td>
+                    <a href="@{/student/{id} (id = ${student.stu_id})}">Edit</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>  
+</body>
+</html>

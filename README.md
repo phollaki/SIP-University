@@ -4,6 +4,8 @@ Basically a small microservice which handles the authentication/authorization lo
 ### Logic
 Any module should extract the incoming request's `Authorization` header and make a request towards this service to the `/auth/current` route including that header. This service gives back whether the user is authenticated, and additionally the id and the role of the user.
 
+In order to generate a valid jwt value for this Bearer method, you have to login first via the `/auth/login` route.
+
 LIVE URL: https://sipauth.webszolgaltatas.hu
 
 

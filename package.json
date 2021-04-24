@@ -3,8 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "start": "yarn run build && SET NODE_ENV=development&& node ./build/app.js",
-    "start:prod": "yarn run build && SET NODE_ENV=production&& node ./build/app.js",
+    "start": "yarn run build && node ./build/app.js",
     "start:watch": "yarn run build:watch & nodemon ./build/app.js",
     "build": "node_modules/.bin/tsc",
     "build:watch": "yarn run build -- -w"

@@ -17,7 +17,7 @@ export const checkJwt = (req: Request, res: Response, next: NextFunction) => {
   let jwtPayload;
 
   try {
-    jwtPayload = jwt.verify(token, process.env.JWT_SECRET);
+    jwtPayload = jwt.verify(token, "" + process.env.JWT_SECRET);
     res.locals.jwtPayload = jwtPayload;
   } catch (error) {
     res.status(401).send(<ApiError>{
@@ -28,9 +28,13 @@ export const checkJwt = (req: Request, res: Response, next: NextFunction) => {
 
   const { id, role } = jwtPayload;
 
-  const newToken = jwt.sign({ data: { id, role } }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+  const newToken = jwt.sign(
+    { data: { id, role } },
+    "" + process.env.JWT_SECRET,
+    {
+      expiresIn: "1h",
+    }
+  );
 
   res.setHeader("Authorization", "Bearer " + newToken);
 

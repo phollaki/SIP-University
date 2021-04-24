@@ -30,8 +30,8 @@ createConnection()
     /**
      * Start the express app.
      */
-    expressApp.listen(3000);
+    expressApp.listen(3001);
 
-    console.log("Server is up and running at port 3000");
+    console.log("Server is up and running at port 3001");
   })
   .catch((error) => console.log(error));

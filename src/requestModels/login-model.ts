@@ -1,5 +1,4 @@
-import { IsNotEmpty, Validate, Matches } from "class-validator";
-import { RecapthchaValidator } from "../validator/recaptcha-validator";
+import { IsNotEmpty } from "class-validator";
 import IValidable from "./base-request";
 
 export default class LoginModel implements IValidable {

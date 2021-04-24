@@ -11,7 +11,7 @@ import {
   Get,
   Req,
 } from "routing-controllers";
-import Container, { Inject, Service } from "typedi";
+import Container, { Service } from "typedi";
 import IUser from "../entity/user";
 import { checkJwt } from "../middlewares/check-jwt";
 import ValidatorService from "../services/validator-service";

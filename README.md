@@ -2,7 +2,7 @@
 Basically a small microservice which handles the authentication/authorization logic among all the projects. 
 
 ### Logic
-Any module should extract the incoming request's `Authorization` header and make a request towards this service to the `/auth/current`route. This service gives back whether the user is authenticated, and additionally the id and the role of the user.
+Any module should extract the incoming request's `Authorization` header and make a request towards this service to the `/auth/current` route including that header. This service gives back whether the user is authenticated, and additionally the id and the role of the user.
 
 LIVE URL: https://sipauth.webszolgaltatas.hu
 

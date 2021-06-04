@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -111,9 +112,14 @@ public class AppController {
 	
 	//Edit a student_information
 	@PutMapping("/students/{id}")
-	public Student_Dim update(@RequestBody Student_Dim student,
+	public ResponseEntity<Student_Dim> update(@RequestBody Student_Dim student,
 	  @PathVariable("id") String stu_id) {
 	    studentService.update(student);
-	    return student;
+	    return ResponseEntity.ok(student);
+	}
+	@DeleteMapping("/students/{id}")
+	private ResponseEntity<Student_Dim> delete(@RequestBody Student_Dim student, @PathVariable("id") String stu_id){
+		studentService.delete(stu_id);
+		return ResponseEntity.ok(student);
 	}
 }

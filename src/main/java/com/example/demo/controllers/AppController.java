@@ -112,14 +112,29 @@ public class AppController {
 	
 	//Edit a student_information
 	@PutMapping("/students/{id}")
-	public ResponseEntity<Student_Dim> update(@RequestBody Student_Dim student,
-	  @PathVariable("id") String stu_id) {
-	    studentService.update(student);
-	    return ResponseEntity.ok(student);
+	public ResponseEntity<Student_Dim> update(@RequestHeader(value="authorization", required = false) String Authorization, @RequestBody Student_Dim student) {
+		if(Authorization == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(student);
+		}
+		else {
+			token = Authorization;
+			sendRequestForAuthServer(token);
+			System.out.println(token);
+			studentService.update(student); 
+			return ResponseEntity.status(HttpStatus.OK).body(student); 
+		}
 	}
 	@DeleteMapping("/students/{id}")
-	private ResponseEntity<Student_Dim> delete(@RequestBody Student_Dim student, @PathVariable("id") String stu_id){
-		studentService.delete(stu_id);
-		return ResponseEntity.ok(student);
+	private ResponseEntity<String> delete(@RequestHeader(value="authorization", required = false) String Authorization, @RequestBody Student_Dim student){
+		if(Authorization == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+		}
+		else {
+			token = Authorization;
+			sendRequestForAuthServer(token);
+			System.out.println(token);
+			studentService.delete(student.getStu_id()); 
+			return ResponseEntity.status(HttpStatus.OK).body("Student has been deleted"); 
+		}
 	}
 }

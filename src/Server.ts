@@ -20,7 +20,7 @@ import { FacultyController } from './controllers/FacultyController';
 import { InstructorController } from './controllers/InstructorController';
 import { LocationController } from './controllers/LocationController';
 import { StudentController } from './controllers/StudentController';
-// import { GlobalErrorHandlerMiddleware } from './middlewares/errorMiddleware';
+import { GlobalErrorHandlerMiddleware } from './middlewares/errorMiddleware';
 import { NotFoundHandlerMiddleware } from './middlewares/notfoundMiddleware';
 
 const { DB_NAME, DB_USER, DB_PORT, DB_HOST, DB_USER_PASSWORD, DB_DATABASE } =
@@ -70,7 +70,7 @@ export class Server {
 
   $afterRoutesInit() {
     this.app.use(NotFoundHandlerMiddleware);
-    //  this.app.use(GlobalErrorHandlerMiddleware);
+    this.app.use(GlobalErrorHandlerMiddleware);
   }
 
   $beforeRoutesInit(): void {

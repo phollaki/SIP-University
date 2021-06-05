@@ -179,10 +179,11 @@ public class StudentService {
 		studentRepository.save(existingStudentDetails);
 	}
 
-	public void delete(String stu_id) {
+	public String delete(String stu_id) {
 		Student_Dim student = studentRepository.findById(stu_id)
 			.orElseThrow(()->new IllegalArgumentException("Invalid student id"));
 		studentRepository.delete(student);
+		return "deleted";
 	}
 
 	public Student_Dim findStudent(String id) {

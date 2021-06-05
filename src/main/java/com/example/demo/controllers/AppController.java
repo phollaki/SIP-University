@@ -143,34 +143,60 @@ public class AppController {
 	//Edit a student_information
 	@PutMapping("/students/{id}")
 	public ResponseEntity<Student_Dim> update(
-			@RequestHeader(value="authorization", required = false) String Authorization, 
-			@RequestBody Student_Dim student) throws ClientProtocolException, IOException {
+			@RequestHeader(value="authorization", required = false) String AuthToken, 
+			@RequestBody Student_Dim student) throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException {
 		CloseableHttpClient client = HttpClients.createDefault();
-	    HttpPost httpPost = new HttpPost("https://sipauth.webszolgaltatas.hu/auth/current");
-	    
+	    HttpGet httpPost = new HttpGet("https://sipauth.webszolgaltatas.hu/auth/current");
 	    httpPost.setHeader("Accept", "application/json");
 	    httpPost.setHeader("Content-type", "application/json");
-	    String authHeader = token;
+	    String authHeader = AuthToken;
 	    httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
 	    CloseableHttpResponse response = client.execute(httpPost);
-	    int statusCode = response.getStatusLine().getStatusCode();
-	    //assertThat(statusCode, equalTo(HttpStatus.OK));
-	    System.out.println(statusCode);
-	    client.close();
-	    return new ResponseEntity<Student_Dim>(HttpStatus.OK);
+	    
+	    JSONObject json = wrapResponse(response);
+	    System.out.println(json);
+	    
+	    if(json.has("isAdmin") && json.getString("isAdmin")=="false") {
+	    	client.close();
+	    	return new ResponseEntity<Student_Dim>(HttpStatus.FORBIDDEN);
+	    }
+	    else if(json.has("isAdmin") && json.getString("isAdmin")=="true") {
+	    	studentService.update(student);
+	    	return new ResponseEntity<Student_Dim>(student, HttpStatus.OK);
+	    }
+	    else if(json.has("error")) {
+		    client.close();
+	    	return new ResponseEntity<Student_Dim>(HttpStatus.UNAUTHORIZED);
+	    }
+	    else return new ResponseEntity<Student_Dim>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	@DeleteMapping("/students/{id}")
-	private ResponseEntity<String> delete(@RequestHeader(value="authorization", required = false) 
-	String Authorization, @RequestBody Student_Dim student){
-		if(Authorization == null) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-		}
-		else {
-			token = Authorization;
-			System.out.println(token);
-			studentService.delete(student.getStu_id()); 
-			return ResponseEntity.status(HttpStatus.OK).body("Student has been deleted"); 
-		}
+	private ResponseEntity<String> delete(@RequestHeader(value="authorization", required = false) String AuthToken, 
+			@RequestBody Student_Dim student) throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException{
+		CloseableHttpClient client = HttpClients.createDefault();
+	    HttpGet httpPost = new HttpGet("https://sipauth.webszolgaltatas.hu/auth/current");
+	    httpPost.setHeader("Accept", "application/json");
+	    httpPost.setHeader("Content-type", "application/json");
+	    String authHeader = AuthToken;
+	    httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+	    CloseableHttpResponse response = client.execute(httpPost);
+	    
+	    JSONObject json = wrapResponse(response);
+	    System.out.println(json);
+	    
+	    if(json.has("isAdmin") && json.getString("isAdmin")=="false") {
+	    	client.close();
+	    	return new ResponseEntity<String>(HttpStatus.FORBIDDEN);
+	    }
+	    else if(json.has("isAdmin") && json.getString("isAdmin")=="true") {
+	    	studentService.delete(student.getStu_id());
+	    	return new ResponseEntity<String>(HttpStatus.OK);
+	    }
+	    else if(json.has("error")) {
+		    client.close();
+	    	return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+	    }
+	    else return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	
 	private JSONObject wrapResponse(CloseableHttpResponse response) throws UnsupportedOperationException, IOException, JSONException {

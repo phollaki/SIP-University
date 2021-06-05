@@ -1,5 +1,13 @@
 package com.example.demo.controllers;
+
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.*;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -7,7 +15,20 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.ws.http.HTTPBinding;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.hibernate.annotations.NotFound;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpClientErrorException.Unauthorized;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -91,50 +113,79 @@ public class AppController {
 	
 	//Create a student_dim (student)
 	@PostMapping("/students")  
-	private ResponseEntity<Student_Dim> saveOrUpdate(@RequestHeader(value="authorization", required = false) String Authorization, @RequestBody Student_Dim student) 
+	private ResponseEntity<Student_Dim> saveOrUpdate(@RequestHeader(value="authorization", required = false) String AuthToken, @RequestBody Student_Dim student) throws ClientProtocolException, IOException, JSONException 
 	{   
-		if(Authorization == null) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(student);
-		}
-		else {
-			token = Authorization;
-			sendRequestForAuthServer(token);
-			System.out.println(token);
-			studentService.saveOrUpdate(student); 
-			return ResponseEntity.status(HttpStatus.OK).body(student); 
-		}
+		CloseableHttpClient client = HttpClients.createDefault();
+	    HttpGet httpPost = new HttpGet("https://sipauth.webszolgaltatas.hu/auth/current");
+	    httpPost.setHeader("Accept", "application/json");
+	    httpPost.setHeader("Content-type", "application/json");
+	    String authHeader = AuthToken;
+	    httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+	    CloseableHttpResponse response = client.execute(httpPost);
+	    
+	    JSONObject json = wrapResponse(response);
+	    System.out.println(json);
+	    
+	    if(json.has("isAdmin") && json.getString("isAdmin")=="false") {
+	    	client.close();
+	    	return new ResponseEntity<Student_Dim>(HttpStatus.FORBIDDEN);
+	    }
+	    else if(json.has("isAdmin") && json.getString("isAdmin")=="true") {
+	    	studentService.saveOrUpdate(student);
+	    	return new ResponseEntity<Student_Dim>(student, HttpStatus.OK);
+	    }
+	    else if(json.has("error")) {
+		    client.close();
+	    	return new ResponseEntity<Student_Dim>(HttpStatus.UNAUTHORIZED);
+	    }
+	    else return new ResponseEntity<Student_Dim>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
-	
-	@GetMapping("https://sipauth.webszolgaltatas.hu/auth/current")
-	private void sendRequestForAuthServer(String token) {
-	}
-	
-	
 	//Edit a student_information
 	@PutMapping("/students/{id}")
-	public ResponseEntity<Student_Dim> update(@RequestHeader(value="authorization", required = false) String Authorization, @RequestBody Student_Dim student) {
-		if(Authorization == null) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(student);
-		}
-		else {
-			token = Authorization;
-			sendRequestForAuthServer(token);
-			System.out.println(token);
-			studentService.update(student); 
-			return ResponseEntity.status(HttpStatus.OK).body(student); 
-		}
+	public ResponseEntity<Student_Dim> update(
+			@RequestHeader(value="authorization", required = false) String Authorization, 
+			@RequestBody Student_Dim student) throws ClientProtocolException, IOException {
+		CloseableHttpClient client = HttpClients.createDefault();
+	    HttpPost httpPost = new HttpPost("https://sipauth.webszolgaltatas.hu/auth/current");
+	    
+	    httpPost.setHeader("Accept", "application/json");
+	    httpPost.setHeader("Content-type", "application/json");
+	    String authHeader = token;
+	    httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+	    CloseableHttpResponse response = client.execute(httpPost);
+	    int statusCode = response.getStatusLine().getStatusCode();
+	    //assertThat(statusCode, equalTo(HttpStatus.OK));
+	    System.out.println(statusCode);
+	    client.close();
+	    return new ResponseEntity<Student_Dim>(HttpStatus.OK);
 	}
 	@DeleteMapping("/students/{id}")
-	private ResponseEntity<String> delete(@RequestHeader(value="authorization", required = false) String Authorization, @RequestBody Student_Dim student){
+	private ResponseEntity<String> delete(@RequestHeader(value="authorization", required = false) 
+	String Authorization, @RequestBody Student_Dim student){
 		if(Authorization == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
 		}
 		else {
 			token = Authorization;
-			sendRequestForAuthServer(token);
 			System.out.println(token);
 			studentService.delete(student.getStu_id()); 
 			return ResponseEntity.status(HttpStatus.OK).body("Student has been deleted"); 
 		}
+	}
+	
+	private JSONObject wrapResponse(CloseableHttpResponse response) throws UnsupportedOperationException, IOException, JSONException {
+		int statusCode = response.getStatusLine().getStatusCode();
+	    //assertThat(statusCode, equalTo(200));
+	    
+	    String res = null;
+	    HttpEntity entity = response.getEntity();
+	    if (entity != null) {
+	      InputStream instream = entity.getContent();
+	      byte[] bytes = IOUtils.toByteArray(instream);
+	      res = new String(bytes, "UTF-8");
+	      instream.close();
+	    }
+	    JSONObject json = new JSONObject(res);
+	    return json;
 	}
 }

@@ -9,20 +9,103 @@ import ApiError from '../dataLayer/models/error';
 
 @Injectable()
 export class HttpStudentProvider implements ISipDataService<IStudent> {
-  getModel(id: string): Promise<IStudent | ApiError> {
-    throw new Error("Method not implemented.");
+  async getModel(id: string): Promise<IStudent | ApiError> {
+    try {
+      const response = await axios.get(
+        process.env.STUDENT_SERVICE_URL + "/students/" + id
+      );
+
+      return response.data;
+    } catch (err) {
+      let errMessage = "";
+      let errCode = 503;
+      if (err.response) {
+        errMessage = err.response.data.error;
+        errCode = err.response.status;
+      } else {
+        errMessage = "Cannot access the backend service.";
+      }
+      return <ApiError>{ error: errMessage, errorCode: errCode };
+    }
   }
-  getAllModel(): Promise<ApiError | IStudent[]> {
-    throw new Error("Method not implemented.");
+  async getAllModel(): Promise<ApiError | IStudent[]> {
+    try {
+      const response = await axios.get(
+        process.env.STUDENT_SERVICE_URL + "/students"
+      );
+      console.log(response.data);
+
+      return response.data;
+    } catch (err) {
+      let errMessage = "";
+      let errCode = 503;
+      if (err.response) {
+        errMessage = err.response.data.error;
+        errCode = err.response.status;
+      } else {
+        errMessage = "Cannot access the backend service.";
+      }
+      return <ApiError>{ error: errMessage, errorCode: errCode };
+    }
   }
-  updateModel(id: string, entity: IStudent): Promise<IStudent | ApiError> {
-    throw new Error("Method not implemented.");
+  async updateModel(
+    id: string,
+    entity: IStudent
+  ): Promise<IStudent | ApiError> {
+    try {
+      const response = await axios.put(
+        process.env.STUDENT_SERVICE_URL + "/students/" + id,
+        entity
+      );
+      return response.data;
+    } catch (err) {
+      let errMessage = "";
+      let errCode = 503;
+      if (err.response) {
+        errMessage = err.response.data.error;
+        errCode = err.response.status;
+      } else {
+        errMessage = "Cannot access the backend service.";
+      }
+      return <ApiError>{ error: errMessage, errorCode: errCode };
+    }
   }
-  createModel(entity: IStudent): Promise<IStudent | ApiError> {
-    throw new Error("Method not implemented.");
+  async createModel(entity: IStudent): Promise<IStudent | ApiError> {
+    try {
+      const response = await axios.post(
+        process.env.STUDENT_SERVICE_URL + "/students",
+        entity
+      );
+      return response.data;
+    } catch (err) {
+      let errMessage = "";
+      let errCode = 503;
+      if (err.response) {
+        errMessage = err.response.data.error;
+        errCode = err.response.status;
+      } else {
+        errMessage = "Cannot access the backend service.";
+      }
+      return <ApiError>{ error: errMessage, errorCode: errCode };
+    }
   }
-  deleteModel(id: string): Promise<IStudent | ApiError> {
-    throw new Error("Method not implemented.");
+  async deleteModel(id: string): Promise<IStudent | ApiError> {
+    try {
+      const response = await axios.delete(
+        process.env.STUDENT_SERVICE_URL + "/students/" + id
+      );
+      return response.data;
+    } catch (err) {
+      let errMessage = "";
+      let errCode = 503;
+      if (err.response) {
+        errMessage = err.response.data.error;
+        errCode = err.response.status;
+      } else {
+        errMessage = "Cannot access the backend service.";
+      }
+      return <ApiError>{ error: errMessage, errorCode: errCode };
+    }
   }
 }
 

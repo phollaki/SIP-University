@@ -6,6 +6,8 @@ import { created, ok } from 'src/helpers/responses';
 import UserDetails from 'src/helpers/userType';
 import { LoggedInMiddleware } from 'src/middlewares/userMiddlewares';
 import { DepartmentService } from 'src/services/DepartmentService';
+import PopulatorService from 'src/services/PopulatorService';
+import { SipSocketService } from 'src/socket/socketService';
 
 import {
     BodyParams, Context, Controller, Delete, Get, PathParams, Post, Put, QueryParams, Res,
@@ -15,7 +17,11 @@ import {
 @UseBeforeEach(LoggedInMiddleware)
 @Controller("/departments")
 export class DepartmentController {
-  constructor(private departmentService: DepartmentService) {}
+  constructor(
+    private departmentService: DepartmentService,
+    private populatorService: PopulatorService,
+    private socket: SipSocketService
+  ) {}
 
   private isError(obj: any | ApiError): obj is ApiError {
     return (obj as ApiError).errorCode != undefined;
@@ -52,10 +58,15 @@ export class DepartmentController {
       filtered = filtered.filter((r) => r.LOC_CODE === loc_code);
     }
 
+    const populated = await this.populatorService.populate(
+      [...filtered],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
     return ok(
       "The query of all departments went succesful.",
       response,
-      filtered
+      populated
     );
   }
 
@@ -72,10 +83,15 @@ export class DepartmentController {
       return response.status(res.errorCode ?? 500).json({ error: res.error });
     }
 
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
     return ok(
       "The query of a single department went succesful.",
       response,
-      res
+      populated
     );
   }
 
@@ -98,10 +114,17 @@ export class DepartmentController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
+
     return ok(
       "The update of a single department went succesful.",
       response,
-      res
+      populated
     );
   }
 
@@ -123,7 +146,18 @@ export class DepartmentController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
-    return created("You have succesfully created a department.", response, res);
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return created(
+      "You have succesfully created a department.",
+      response,
+      populated
+    );
   }
 
   @Delete("/:id")
@@ -144,6 +178,17 @@ export class DepartmentController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
-    return ok("You have succesfully deleted the department.", response, res);
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return ok(
+      "You have succesfully deleted the department.",
+      response,
+      populated
+    );
   }
 }

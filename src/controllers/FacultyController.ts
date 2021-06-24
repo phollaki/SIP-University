@@ -4,6 +4,8 @@ import ApiError from 'src/dataLayer/models/error';
 import { ok } from 'src/helpers/responses';
 import { LoggedInMiddleware } from 'src/middlewares/userMiddlewares';
 import { FacultyService } from 'src/services/FacultyService';
+import PopulatorService from 'src/services/PopulatorService';
+import { SipSocketService } from 'src/socket/socketService';
 
 import {
     BodyParams, Context, Controller, Delete, Get, Inject, PathParams, PlatformResponse, Post, Put,
@@ -17,7 +19,10 @@ import UserDetails from '../helpers/userType';
 @UseBeforeEach(LoggedInMiddleware)
 @Controller("/faculties")
 export class FacultyController {
-  constructor(private facultyService: FacultyService) {}
+  constructor(
+    private facultyService: FacultyService,
+    private socket: SipSocketService
+  ) {}
 
   private isError(obj: any | ApiError): obj is ApiError {
     return (obj as ApiError).errorCode != undefined;
@@ -84,6 +89,8 @@ export class FacultyController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
+    this.socket.getRefreshSignal();
+
     return ok("The update of a single faculty went succesful.", response, res);
   }
 
@@ -105,6 +112,8 @@ export class FacultyController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
+    this.socket.getRefreshSignal();
+
     return created("You have succesfully created a faculty.", response, res);
   }
 
@@ -122,6 +131,8 @@ export class FacultyController {
     }
     axios.defaults.headers["Authorization"] = "Bearer " + jwt;
     const res = await this.facultyService.deleteOne(id);
+
+    this.socket.getRefreshSignal();
 
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });

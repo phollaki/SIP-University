@@ -4,7 +4,9 @@ import { Request, Response } from 'express';
 import ApiError from 'src/dataLayer/models/error';
 import { created, ok } from 'src/helpers/responses';
 import UserDetails from 'src/helpers/userType';
+import PopulatorService from 'src/services/PopulatorService';
 import { StudentService } from 'src/services/StudentService';
+import { SipSocketService } from 'src/socket/socketService';
 
 import {
     BodyParams, Context, Controller, Delete, Get, PathParams, Post, Put, QueryParams, Res,
@@ -16,7 +18,11 @@ import { LoggedInMiddleware } from '../middlewares/userMiddlewares';
 @UseBeforeEach(LoggedInMiddleware)
 @Controller("/students")
 export class StudentController {
-  constructor(private studentService: StudentService) {}
+  constructor(
+    private studentService: StudentService,
+    private populatorService: PopulatorService,
+    private socket: SipSocketService
+  ) {}
 
   private isError(obj: any | ApiError): obj is ApiError {
     return (obj as ApiError).errorCode != undefined;
@@ -79,9 +85,14 @@ export class StudentController {
       filtered = filtered.filter((r) => r.LOC_CODE === loc_code);
     }
 
+    const populated = await this.populatorService.populate(
+      [...filtered],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
     return response.status(200).json({
       message: "The query of all students went succesful.",
-      result: filtered,
+      result: populated,
     });
   }
 
@@ -99,9 +110,14 @@ export class StudentController {
       return response.status(res.errorCode ?? 500).json({ error: res.error });
     }
 
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
     return response.status(200).json({
       message: "The query of a single student went succesful.",
-      result: res,
+      result: populated,
     });
   }
 
@@ -124,9 +140,16 @@ export class StudentController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
+
     return response.status(200).json({
       message: "The update of a single student went succesful.",
-      result: res,
+      result: populated,
     });
   }
 
@@ -162,7 +185,18 @@ export class StudentController {
     if (this.isError(res2))
       return response.status(res2.errorCode).json({ error: res2.error });
 
-    return created("You have succesfully created a student.", response, res);
+    const populated = await this.populatorService.populate(
+      [res2],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return created(
+      "You have succesfully created a student.",
+      response,
+      populated
+    );
   }
 
   @Delete("/:id")
@@ -183,6 +217,13 @@ export class StudentController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
-    return ok("You have succesfully deleted the student.", response, res);
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "LOC_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return ok("You have succesfully deleted the student.", response, populated);
   }
 }

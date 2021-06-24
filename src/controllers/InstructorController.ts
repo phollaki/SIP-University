@@ -6,6 +6,8 @@ import { created, ok } from 'src/helpers/responses';
 import UserDetails from 'src/helpers/userType';
 import { LoggedInMiddleware } from 'src/middlewares/userMiddlewares';
 import { InstructorService } from 'src/services/InstructorService';
+import PopulatorService from 'src/services/PopulatorService';
+import { SipSocketService } from 'src/socket/socketService';
 
 import {
     BodyParams, Context, Controller, Delete, Get, PathParams, Post, Put, QueryParams, Res,
@@ -15,7 +17,11 @@ import {
 @UseBeforeEach(LoggedInMiddleware)
 @Controller("/instructors")
 export class InstructorController {
-  constructor(private instructorService: InstructorService) {}
+  constructor(
+    private instructorService: InstructorService,
+    private populatorService: PopulatorService,
+    private socket: SipSocketService
+  ) {}
 
   private isError(obj: any | ApiError): obj is ApiError {
     return (obj as ApiError).errorCode != undefined;
@@ -57,10 +63,15 @@ export class InstructorController {
       filtered = filtered.filter((r) => r.FAC_CODE === fac_code);
     }
 
+    const populated = await this.populatorService.populate(
+      [...filtered],
+      ["FAC_CODE", "DEP_CODE"]
+    );
+
     return ok(
       "The query of all instructors went succesful.",
       response,
-      filtered
+      populated
     );
   }
 
@@ -77,10 +88,15 @@ export class InstructorController {
       return response.status(res.errorCode ?? 500).json({ error: res.error });
     }
 
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE"]
+    );
+
     return ok(
       "The query of a single instructor went succesful.",
       response,
-      res
+      populated
     );
   }
 
@@ -102,6 +118,13 @@ export class InstructorController {
 
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
+
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
 
     return ok(
       "The update of a single instructor went succesful.",
@@ -128,7 +151,18 @@ export class InstructorController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
-    return created("You have succesfully created a instructor.", response, res);
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return created(
+      "You have succesfully created an instructor.",
+      response,
+      populated
+    );
   }
 
   @Delete("/:id")
@@ -141,13 +175,15 @@ export class InstructorController {
     if (!user.isAdmin) {
       return response
         .status(401)
-        .json({ error: "You are not authorized to delete a instructor." });
+        .json({ error: "You are not authorized to delete an instructor." });
     }
     axios.defaults.headers["Authorization"] = "Bearer " + jwt;
     const res = await this.instructorService.deleteOne(id);
 
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
+
+    this.socket.getRefreshSignal();
 
     return ok("You have succesfully deleted the instructor.", response, res);
   }

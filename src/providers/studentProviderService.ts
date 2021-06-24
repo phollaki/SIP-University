@@ -1,5 +1,6 @@
 import ISipDataService from 'src/dataLayer/dataservice';
 import { DbStudentProvider } from 'src/secondLayer/providers/dbStudentProvider';
+import { HttpStudentProvider } from 'src/thirdLayer/httpDataProvider';
 
 import { Injectable } from '@tsed/di';
 
@@ -7,8 +8,8 @@ import { Injectable } from '@tsed/di';
 export class StudentProviderService {
   private currentProvider: ISipDataService<IStudent>;
 
-  constructor(private dbStudent: DbStudentProvider) {
-    this.currentProvider = this.dbStudent;
+  constructor(private httpStudent: HttpStudentProvider) {
+    this.currentProvider = this.httpStudent;
   }
 
   public changeProvider(provider: ISipDataService<IStudent>) {

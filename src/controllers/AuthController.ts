@@ -8,7 +8,7 @@ import { Controller, Get, Post, Req, Res, UseBefore } from '@tsed/common';
 export class AuthController {
   @Post("/login")
   async loginUser(@Req() req: Request, @Res() res: Response) {
-    const { username, password } = req.body;
+    const { username, password, captcha } = req.body;
 
     if (!username || !password) {
       return res

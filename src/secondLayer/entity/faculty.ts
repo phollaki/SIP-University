@@ -1,6 +1,7 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, PrimaryColumn } from 'typeorm';
 
 import IFaculty from '../../dataLayer/models/faculty';
+import Course from './course';
 
 @Entity({ name: "faculty" })
 export default class Faculty implements IFaculty {

@@ -1,12 +1,13 @@
 import axios from 'axios';
+import { Request, Response } from 'express';
 
 import { Context, IMiddleware, Middleware, Next, Req, Res } from '@tsed/common';
 
 @Middleware()
 export class LoggedInMiddleware implements IMiddleware {
   async use(
-    @Req() req: Req,
-    @Res() res: Res,
+    @Req() req: Request,
+    @Res() res: Response,
     @Context() ctx: Context,
     @Next() next: Next
   ) {
@@ -25,6 +26,7 @@ export class LoggedInMiddleware implements IMiddleware {
         }
       );
       ctx.set("user", response.data);
+
       ctx.set("jwt", authHeader.split(" ")[1]);
       next();
     } catch (err) {

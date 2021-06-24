@@ -7,4 +7,5 @@ interface IStudent extends IModel {
   LOC_CODE: string;
   MARRIAGE_STATUS: string;
   HASHED_PASSWORD: string;
+  ADDRESS: string;
 }

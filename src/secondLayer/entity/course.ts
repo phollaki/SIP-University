@@ -1,13 +1,12 @@
-import Faculty from 'src/dataLayer/models/faculty';
 import {
-    Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryColumn, RelationId
+    Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, RelationId
 } from 'typeorm';
 
 import ICourse from '../../dataLayer/models/course';
+import Faculty from './faculty';
 
 @Entity({ name: "course_dim" })
 export default class Course implements ICourse {
-  FACULTY: Faculty;
   @PrimaryColumn({
     type: "varchar",
     name: "crs_code",
@@ -27,6 +26,4 @@ export default class Course implements ICourse {
 
   @Column({ type: "varchar", name: "dep_code", length: 4 })
   DEP_CODE: string;
-
-  TESt: string;
 }

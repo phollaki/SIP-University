@@ -1,6 +1,7 @@
 import '@tsed/platform-express'; // /!\ keep this import
 import '@tsed/ajv';
 import '@tsed/typeorm';
+import '@tsed/socketio';
 
 import compress from 'compression';
 import cookieParser from 'cookie-parser';
@@ -16,11 +17,12 @@ import { AdminController } from './controllers/AdminController';
 import { AuthController } from './controllers/AuthController';
 import { CourseController } from './controllers/CourseController';
 import { DepartmentController } from './controllers/DepartmentController';
+import { EnrollmentController } from './controllers/EnrollmentController';
 import { FacultyController } from './controllers/FacultyController';
 import { InstructorController } from './controllers/InstructorController';
 import { LocationController } from './controllers/LocationController';
 import { StudentController } from './controllers/StudentController';
-import { GlobalErrorHandlerMiddleware } from './middlewares/errorMiddleware';
+// import { GlobalErrorHandlerMiddleware } from './middlewares/errorMiddleware';
 import { NotFoundHandlerMiddleware } from './middlewares/notfoundMiddleware';
 
 const { DB_NAME, DB_USER, DB_PORT, DB_HOST, DB_USER_PASSWORD, DB_DATABASE } =
@@ -28,6 +30,11 @@ const { DB_NAME, DB_USER, DB_PORT, DB_HOST, DB_USER_PASSWORD, DB_DATABASE } =
 
 @Configuration({
   ...config,
+
+  socketIO: {
+    cors: { origin: "*" },
+    path: "/sipservice",
+  },
   typeorm: [
     {
       name: DB_NAME,
@@ -52,6 +59,7 @@ const { DB_NAME, DB_USER, DB_PORT, DB_HOST, DB_USER_PASSWORD, DB_DATABASE } =
     "/departments": [DepartmentController],
     "/locations": [LocationController],
     "/instructors": [InstructorController],
+    "/enrollments": [EnrollmentController],
   },
   exclude: ["**/*.spec.ts"],
   componentsScan: [
@@ -59,6 +67,7 @@ const { DB_NAME, DB_USER, DB_PORT, DB_HOST, DB_USER_PASSWORD, DB_DATABASE } =
     `./thirdLayer/**.ts`,
     `./services/**.ts`,
     `./middlewares/**.ts`,
+    `./socket/**.ts`,
   ],
 })
 export class Server {
@@ -70,12 +79,12 @@ export class Server {
 
   $afterRoutesInit() {
     this.app.use(NotFoundHandlerMiddleware);
-    this.app.use(GlobalErrorHandlerMiddleware);
+    //  this.app.use(GlobalErrorHandlerMiddleware);
   }
 
   $beforeRoutesInit(): void {
     this.app
-      .use(cors())
+      .use(cors({ origin: "*" }))
       .use(cookieParser())
       .use(compress({}))
       .use(methodOverride())

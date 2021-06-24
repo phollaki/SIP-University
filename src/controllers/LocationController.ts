@@ -6,6 +6,7 @@ import { created, ok } from 'src/helpers/responses';
 import UserDetails from 'src/helpers/userType';
 import { LoggedInMiddleware } from 'src/middlewares/userMiddlewares';
 import { LocationService } from 'src/services/LocationService';
+import PopulatorService from 'src/services/PopulatorService';
 
 import {
     BodyParams, Context, Controller, Delete, Get, PathParams, Post, Put, QueryParams, Res,
@@ -15,7 +16,10 @@ import {
 @UseBeforeEach(LoggedInMiddleware)
 @Controller("/locations")
 export class LocationController {
-  constructor(private locationService: LocationService) {}
+  constructor(
+    private locationService: LocationService,
+    private populatorService: PopulatorService
+  ) {}
 
   private isError(obj: any | ApiError): obj is ApiError {
     return (obj as ApiError).errorCode != undefined;

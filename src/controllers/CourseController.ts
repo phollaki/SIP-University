@@ -5,6 +5,8 @@ import ApiError from 'src/dataLayer/models/error';
 import { ok } from 'src/helpers/responses';
 import { LoggedInMiddleware } from 'src/middlewares/userMiddlewares';
 import { CourseService } from 'src/services/CourseService';
+import PopulatorService from 'src/services/PopulatorService';
+import { SipSocketService } from 'src/socket/socketService';
 
 import {
     BodyParams, Context, Controller, Delete, Get, Inject, PathParams, PlatformResponse, Post, Put,
@@ -17,7 +19,11 @@ import UserDetails from '../helpers/userType';
 @UseBeforeEach(LoggedInMiddleware)
 @Controller("/courses")
 export class CourseController {
-  constructor(private courseService: CourseService) {}
+  constructor(
+    private courseService: CourseService,
+    private populatorService: PopulatorService,
+    private socket: SipSocketService
+  ) {}
 
   private isError(obj: any | ApiError): obj is ApiError {
     return (obj as ApiError).errorCode != undefined;
@@ -34,13 +40,16 @@ export class CourseController {
     @QueryParams("dep_code") dep_code: string
   ) {
     axios.defaults.headers["Authorization"] = "Bearer " + jwt;
-    const res = await this.courseService.getAll();
 
-    if (this.isError(res)) {
-      return response.status(res.errorCode ?? 500).json({ error: res.error });
+    const courses = await this.courseService.getAll();
+
+    if (this.isError(courses)) {
+      return response
+        .status(courses.errorCode ?? 500)
+        .json({ error: courses.error });
     }
 
-    let filtered = res.map((r) => r);
+    let filtered = courses.map((r) => r);
 
     if (crs_code) {
       filtered = filtered.filter((r) => r.CRS_CODE === crs_code);
@@ -58,7 +67,18 @@ export class CourseController {
       filtered = filtered.filter((r) => r.DEP_CODE === dep_code);
     }
 
-    return ok("The query of all courses went succesful.", response, filtered);
+    filtered = filtered.map((f) => f);
+
+    const populatedFiltered = await this.populatorService.populate(
+      [...filtered],
+      ["FAC_CODE", "DEP_CODE", "INS_ID"]
+    );
+
+    return ok(
+      "The query of all courses went succesful.",
+      response,
+      populatedFiltered
+    );
   }
 
   @Get("/:id")
@@ -74,7 +94,18 @@ export class CourseController {
       return response.status(res.errorCode ?? 500).json({ error: res.error });
     }
 
-    return ok("The query of a single course went succesful.", response, res);
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "INS_ID"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return ok(
+      "The query of a single course went succesful.",
+      response,
+      populated
+    );
   }
 
   @Put("/:id")
@@ -96,7 +127,18 @@ export class CourseController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
-    return ok("The update of a single course went succesful.", response, res);
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "INS_ID"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return ok(
+      "The update of a single course went succesful.",
+      response,
+      populated
+    );
   }
 
   @Post("/")
@@ -117,7 +159,18 @@ export class CourseController {
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
 
-    return created("You have succesfully created a course.", response, res);
+    const populated = await this.populatorService.populate(
+      [res],
+      ["FAC_CODE", "DEP_CODE", "INS_ID"]
+    );
+
+    this.socket.getRefreshSignal();
+
+    return created(
+      "You have succesfully created a course.",
+      response,
+      populated
+    );
   }
 
   @Delete("/:id")
@@ -137,6 +190,8 @@ export class CourseController {
 
     if (this.isError(res))
       return response.status(res.errorCode).json({ error: res.error });
+
+    this.socket.getRefreshSignal();
 
     return ok("You have succesfully deleted the course.", response, res);
   }
